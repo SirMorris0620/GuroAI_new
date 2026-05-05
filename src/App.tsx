@@ -28,8 +28,40 @@ export default function App() {
   // Load history from Firestore when user changes
   useEffect(() => {
     if (!user) {
-      setHistory([]);
+      const savedHistory = localStorage.getItem("guroai_history");
+      if (savedHistory) {
+        try {
+          setHistory(JSON.parse(savedHistory));
+        } catch (e) {
+          console.error("Failed to parse history", e);
+        }
+      } else {
+        setHistory([]);
+      }
       return;
+    }
+
+    // Migrate if any items in local storage
+    const savedHistory = localStorage.getItem("guroai_history");
+    if (savedHistory) {
+      try {
+        const localHistory: HistoryItem[] = JSON.parse(savedHistory);
+        if (Array.isArray(localHistory) && localHistory.length > 0) {
+          localHistory.forEach(item => {
+            const id = Date.now().toString() + Math.random().toString(36).substring(7);
+            const newItem: HistoryItem = {
+              ...item,
+              id,
+              userId: user.uid,
+              timestamp: item.timestamp || Date.now(),
+            };
+            setDoc(doc(db, "users", user.uid, "lessons", id), newItem).catch(console.error);
+          });
+        }
+        localStorage.removeItem("guroai_history");
+      } catch (e) {
+        console.error("Failed to parse/migrate local history", e);
+      }
     }
 
     const q = query(
@@ -61,18 +93,21 @@ export default function App() {
       const output = await generateLessonPlan(data);
       setResult(output);
       
-      // Add to history in firestore if logged in
+      const id = Date.now().toString();
+      const newItem: HistoryItem = {
+        ...data,
+        id,
+        userId: user ? user.uid : "guest",
+        content: output,
+        timestamp: Date.now(),
+      };
+
       if (user) {
-        const id = Date.now().toString();
-        const newItem: HistoryItem = {
-          ...data,
-          id,
-          userId: user.uid,
-          content: output,
-          timestamp: Date.now(),
-        };
-        
         await setDoc(doc(db, "users", user.uid, "lessons", id), newItem);
+      } else {
+        const newHistory = [newItem, ...history].slice(0, 20);
+        setHistory(newHistory);
+        localStorage.setItem("guroai_history", JSON.stringify(newHistory));
       }
       
       setTimeout(() => {
@@ -96,16 +131,20 @@ export default function App() {
   };
 
   const handleClearHistory = async () => {
-    if (!user) return;
     if (confirm("Are you sure you want to clear your lesson history?")) {
-      try {
-        const q = query(collection(db, "users", user.uid, "lessons"), where("userId", "==", user.uid));
-        const snapshot = await getDocs(q);
-        const deletePromises = snapshot.docs.map(document => deleteDoc(doc(db, "users", user.uid, "lessons", document.id)));
-        await Promise.all(deletePromises);
-      } catch (err) {
-        console.error("Error clearing history", err);
-        alert("Failed to clear history.");
+      if (user) {
+        try {
+          const q = query(collection(db, "users", user.uid, "lessons"), where("userId", "==", user.uid));
+          const snapshot = await getDocs(q);
+          const deletePromises = snapshot.docs.map(document => deleteDoc(doc(db, "users", user.uid, "lessons", document.id)));
+          await Promise.all(deletePromises);
+        } catch (err) {
+          console.error("Error clearing history", err);
+          alert("Failed to clear history.");
+        }
+      } else {
+        setHistory([]);
+        localStorage.removeItem("guroai_history");
       }
     }
   };
