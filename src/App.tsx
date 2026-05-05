@@ -113,8 +113,9 @@ export default function App() {
       setTimeout(() => {
         document.getElementById("result-section")?.scrollIntoView({ behavior: "smooth" });
       }, 100);
-    } catch (err) {
-      setError("Failed to generate lesson plan. Please check your connection and try again.");
+    } catch (err: any) {
+      const errorMsg = err?.message || String(err);
+      setError(`Failed to generate lesson plan: ${errorMsg}`);
       console.error(err);
     } finally {
       setIsLoading(false);
