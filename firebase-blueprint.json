@@ -1,0 +1,66 @@
+{
+  "entities": {
+    "user": {
+      "title": "User",
+      "description": "User profile data",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "number",
+          "description": "Timestamp"
+        }
+      },
+      "required": ["email", "createdAt"]
+    },
+    "historyItem": {
+      "title": "History Item",
+      "description": "A generated lesson plan history item",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Owner UID"
+        },
+        "topic": {
+          "type": "string"
+        },
+        "subject": {
+          "type": "string"
+        },
+        "gradeLevel": {
+          "type": "string"
+        },
+        "duration": {
+          "type": "string"
+        },
+        "learningStyle": {
+          "type": "string"
+        },
+        "content": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "number"
+        }
+      },
+      "required": ["userId", "topic", "subject", "gradeLevel", "duration", "learningStyle", "content", "timestamp"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/user"
+      },
+      "description": "User profile"
+    },
+    "users/{userId}/lessons/{lessonId}": {
+      "schema": {
+        "$ref": "#/entities/historyItem"
+      },
+      "description": "Lesson plan history"
+    }
+  }
+}

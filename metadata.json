@@ -1,0 +1,6 @@
+{
+  "name": "GuroAI: Design-Build-Reflect Assistant",
+  "description": "An ethical, pedagogically-aligned AI assistant for Filipino educators, generating lesson plans using the Design, Build, Reflect model.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["AI Content Generation", "Educational Planning"]
+}
