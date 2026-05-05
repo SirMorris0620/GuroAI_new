@@ -90,8 +90,19 @@ export async function aiEditContent(text: string, instruction: 'REPHRASE' | 'SIM
     });
 
     return response.text || text;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Gemini API Error:", error);
+    
+    // Check if it's a quota exceeded error
+    const errorMessage = error?.message || String(error);
+    if (errorMessage.includes("429") && (errorMessage.includes("Quota") || errorMessage.includes("RESOURCE_EXHAUSTED"))) {
+      throw new Error(
+        "Your Gemini API key has exceeded its usage quota. " +
+        "You may need to set up a billing account at https://aistudio.google.com/app/billing " +
+        "or wait for your free tier quota to reset."
+      );
+    }
+    
     throw error;
   }
 }
@@ -111,8 +122,19 @@ export async function generateLessonPlan(data: LessonPlanRequest) {
     });
 
     return response.text || "No content generated.";
-  } catch (error) {
+  } catch (error: any) {
     console.error("Gemini API Error:", error);
+    
+    // Check if it's a quota exceeded error
+    const errorMessage = error?.message || String(error);
+    if (errorMessage.includes("429") && (errorMessage.includes("Quota") || errorMessage.includes("RESOURCE_EXHAUSTED"))) {
+      throw new Error(
+        "Your Gemini API key has exceeded its usage quota. " +
+        "You may need to set up a billing account at https://aistudio.google.com/app/billing " +
+        "or wait for your free tier quota to reset."
+      );
+    }
+    
     throw error;
   }
 }
