@@ -1,7 +1,13 @@
 import { GoogleGenAI } from "@google/genai";
 import { LessonPlanRequest } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+function getAIClient() {
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("Gemini API key is not configured. In Vercel, please set VITE_GEMINI_API_KEY in your Environment Variables and trigger a redeploy.");
+  }
+  return new GoogleGenAI({ apiKey });
+}
 
 const SYSTEM_INSTRUCTION = `Act as an Expert Philippine Public School Master Teacher and Instructional Designer. Your task is to generate a highly structured, ready-to-print DepEd Detailed Lesson Plan (DLP).
 
@@ -65,10 +71,6 @@ Provide three quick "Pivots" based on an Instructional Audit simulation:
 Use professional, encouraging language and ensure cultural relevance to the Filipino classroom context.`;
 
 export async function aiEditContent(text: string, instruction: 'REPHRASE' | 'SIMPLIFY' | 'EXPAND') {
-  if (!process.env.GEMINI_API_KEY) {
-    throw new Error("GEMINI_API_KEY is not configured");
-  }
-
   const instructionsMap = {
     REPHRASE: "Rewrite the following text to improve clarity and flow while maintaining the original meaning.",
     SIMPLIFY: "Simplify the following text so it is easier to understand, reducing complex vocabulary.",
@@ -78,6 +80,7 @@ export async function aiEditContent(text: string, instruction: 'REPHRASE' | 'SIM
   const prompt = `${instructionsMap[instruction]}\n\nOriginal Text:\n"${text}"\n\nProvide ONLY the edited text without any conversational filler or quotes.`;
 
   try {
+    const ai = getAIClient();
     const response = await ai.models.generateContent({
       model: "gemini-2.0-flash",
       contents: prompt,
@@ -94,13 +97,10 @@ export async function aiEditContent(text: string, instruction: 'REPHRASE' | 'SIM
 }
 
 export async function generateLessonPlan(data: LessonPlanRequest) {
-  if (!process.env.GEMINI_API_KEY) {
-    throw new Error("GEMINI_API_KEY is not configured");
-  }
-
   const prompt = `Grade: ${data.grade}\nSubject: ${data.subject}\nTopic: ${data.topic}`;
 
   try {
+    const ai = getAIClient();
     const response = await ai.models.generateContent({
       model: "gemini-2.0-flash", 
       contents: prompt,
